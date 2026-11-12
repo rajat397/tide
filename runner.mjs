@@ -4,6 +4,7 @@
 
 import { spawn, execSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 export class RealRunner {
@@ -40,7 +41,7 @@ export class RealRunner {
     fs.mkdirSync(path.dirname(wt), { recursive: true });
     this.sh(`git worktree add -f "${wt}" -b ${branch} ${this.cfg.base ?? 'main'}`, this.cfg.repo);
     // task text via file (CLIs choke on quoting); template may use {task} too
-    const taskFile = path.join(wt, '.tide-task.txt');
+    const taskFile = path.join(os.tmpdir(), `tide-task-${task}.txt`);   // D1: outside the worktree — never committed
     fs.writeFileSync(taskFile, `# ${title}\n\n${body}\n`);
     const cmd = (this.cfg.agentCommand ?? 'claude -p "{taskFile}"')
       .replaceAll('{taskFile}', taskFile)
