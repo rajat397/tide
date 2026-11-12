@@ -16,7 +16,7 @@ const edit = (file, from, to) => {
   console.log(`[dogfood-agent] applied fix to ${file}`);
 };
 
-if (title.startsWith('D10')) {
+if (title.startsWith('D10:')) {
   // D10: --script starts a fresh session — task ids restart and collide with
   // previous runs' branches. Recover the log first (ids continue, stale
   // slots orphaned back to the queue).
@@ -24,7 +24,7 @@ if (title.startsWith('D10')) {
     "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\\n');\n  for (const line of fs.readFileSync(file, 'utf8').split('\\n')) {",
     "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\\n');\n  if (fs.existsSync(logPath(cfg))) {   // D10: continue ids, orphan stale slots\n    s.recover(fs.readFileSync(logPath(cfg), 'utf8').split('\\n').filter((l) => l.trim()));\n  }\n  for (const line of fs.readFileSync(file, 'utf8').split('\\n')) {");
 
-} else if (title.startsWith('D1')) {
+} else if (title.startsWith('D1:')) {
   // D1: task files written INSIDE the worktree get committed into merges/PRs
   edit('runner.mjs',
     "import fs from 'node:fs';\nimport path from 'node:path';",
@@ -32,7 +32,7 @@ if (title.startsWith('D10')) {
   edit('runner.mjs',
     "const taskFile = path.join(wt, '.tide-task.txt');",
     "const taskFile = path.join(os.tmpdir(), `tide-task-${task}.txt`);   // D1: outside the worktree — never committed");
-} else if (title.startsWith('D2')) {
+} else if (title.startsWith('D2:')) {
   // D2: board ignores ESC sequences — arrow keys dead for slot selection
   edit('board.mjs',
     "process.stdin.on('data', (d) => {\n    const s = d.toString('utf8');\n    for (const ch of s) {\n      if (ch === ESC) continue;            // arrows ignored in v0.1 board\n      key(ch);\n    }\n  });",
@@ -40,7 +40,7 @@ if (title.startsWith('D10')) {
   edit('board.mjs',
     "if (ch === '[') { sel = Math.max(0, sel - 1); lastDetailSlot = -1; return; }",
     "if (ch === '!up!') { sel = Math.max(0, sel - 1); lastDetailSlot = -1; return; }   // D2\n    if (ch === '!dn!') { sel = Math.min(Math.max(0, live.length - 1), sel + 1); lastDetailSlot = -1; return; } // D2\n    if (ch === '[') { sel = Math.max(0, sel - 1); lastDetailSlot = -1; return; }");
-} else if (title.startsWith('D3')) {
+} else if (title.startsWith('D3:')) {
   // D3: orphan/requeue decisions during recovery are not persisted —
   // every `tide status` re-orphans the same slots
   edit('tide.mjs',
@@ -49,7 +49,7 @@ if (title.startsWith('D10')) {
   edit('tide.mjs',
     "  const s = await sessionWith(cfg);\n  const orphans = s.recover(fs.readFileSync(log, 'utf8').split('\\n').filter((l) => l.trim()));",
     "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(log, l + '\\n');   // D3: persist recovery decisions\n  const orphans = s.recover(fs.readFileSync(log, 'utf8').split('\\n').filter((l) => l.trim()));");
-} else if (title.startsWith('D4')) {
+} else if (title.startsWith('D4:')) {
   // D4: permanent dispatch failures requeue forever — need a bounded retry
   // budget that fails the task CLOSED (M-5's own lesson, applied to TIDE)
   edit('core.mjs',
@@ -67,7 +67,7 @@ if (title.startsWith('D10')) {
   edit('session.mjs',
     "  failDispatch(slot, reason) {\n    const s = this.core.slots[slot];\n    if (s.taskId != null) this.core.apply({ op: 'requeue', task: s.taskId }, true);\n  }",
     "  failDispatch(slot, reason) {\n    const s = this.core.slots[slot];\n    if (s.taskId != null) this.core.apply({ op: 'dispatch_fail', task: s.taskId, reason }, true);   // D4\n  }");
-} else if (title.startsWith('D5')) {
+} else if (title.startsWith('D5:')) {
   // D5: tide init hardcodes base 'main' — detect the repo's actual default
   edit('tide.mjs',
     "import fs from 'node:fs';\nimport path from 'node:path';",
@@ -78,23 +78,23 @@ if (title.startsWith('D10')) {
   edit('tide.mjs',
     "    base: 'main',\n    concurrency: 8,",
     "    base,   // D5: detected from the repo\n    concurrency: 8,");
-} else if (title.startsWith('D6')) {
+} else if (title.startsWith('D6:')) {
   // D6: spawn errors are unhandled — slot hangs in RUNNING forever
   edit('runner.mjs',
     "    child.on('exit', (code, signal) => {\n      this.procs.delete(slot);\n      this.session.agentExited(slot, code ?? 1, signal ? `signal ${signal}` : '');\n    });",
     "    child.on('exit', (code, signal) => {\n      this.procs.delete(slot);\n      this.session.agentExited(slot, code ?? 1, signal ? `signal ${signal}` : '');\n    });\n    child.on('error', (err) => {   // D6: spawn failures must not hang the slot\n      this.procs.delete(slot);\n      this.session.agentExited(slot, 1, `spawn error: ${err.message}`);\n    });");
-} else if (title.startsWith('D8')) {
+} else if (title.startsWith('D8:')) {
   // D8: requeue/orphan cleanup leaves the task branch behind — next dispatch
   // of the same task fails to create it. (Also extends cleanup() to take it.)
   edit('runner.mjs',
     "  cleanup({ worktree }) {\n    if (!worktree) return;",
     "  cleanup({ worktree, branch }) {   // D8: branches die with their worktree\n    if (branch) { try { this.sh(`git branch -D ${branch}`, this.cfg.repo); } catch { /* already gone */ } }\n    if (!worktree) return;");
-} else if (title.startsWith('D9')) {
+} else if (title.startsWith('D9:')) {
   // D9: gh pr create failures vanish silently — the operator never learns
   edit('runner.mjs',
     "    } catch { /* gh absent or PR exists */ }",
     "    } catch (err) {   // D9: surface the PR failure to the operator\n      console.error('[tide] gh pr create failed (branch pushed — create the PR manually):', String(err.message ?? err).slice(0, 140));\n    }");
-} else if (title.startsWith('D11')) {
+} else if (title.startsWith('D11:')) {
   // D11: FAILED tasks never clean up their worktree/branch (they linger)
   edit('core.mjs',
     "    const t = this.tasks[s.taskId];\n    if (t && exit !== 0) t.state = T_FAILED;\n  }",
