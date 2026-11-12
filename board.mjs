@@ -94,6 +94,8 @@ export function runBoard({ cfg }) {
     }
     if (ch === 'q' || ch === 'Q') { running = false; return; }
     if (ch === 'n') { mode = 'prompt'; promptText = ''; return; }
+    if (ch === '!up!') { sel = Math.max(0, sel - 1); lastDetailSlot = -1; return; }   // D2
+    if (ch === '!dn!') { sel = Math.min(Math.max(0, live.length - 1), sel + 1); lastDetailSlot = -1; return; } // D2
     if (ch === '[') { sel = Math.max(0, sel - 1); lastDetailSlot = -1; return; }
     if (ch === ']') { sel = Math.min(Math.max(0, live.length - 1), sel + 1); lastDetailSlot = -1; return; }
     const s = live[sel];
@@ -109,9 +111,11 @@ export function runBoard({ cfg }) {
   process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.on('data', (d) => {
-    const s = d.toString('utf8');
+    const s = d.toString('utf8')
+      .replace(/\x1b\[A/g, '!up!').replace(/\x1b\[B/g, '!dn!')   // D2: arrows usable
+      .replace(/\x1b\[C/g, '!rt!').replace(/\x1b\[D/g, '!lf!');
     for (const ch of s) {
-      if (ch === ESC) continue;            // arrows ignored in v0.1 board
+      if (ch === ESC) continue;
       key(ch);
     }
   });
