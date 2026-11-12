@@ -1,0 +1,9 @@
+{
+  "repo": "/mnt/data/projects/tide",
+  "base": "main",
+  "concurrency": 2,
+  "worktreeDir": ".tide",
+  "agentCommand": "node dogfood-agent.mjs {taskFile}",
+  "gateCommand": "node test.mjs",
+  "autoMerge": false
+}

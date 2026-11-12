@@ -1,3 +1,5 @@
 .tide/
 .tide-log.jsonl
 node_modules/
+.tide/
+.tide-log.jsonl
