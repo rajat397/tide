@@ -79,6 +79,9 @@ tide merge-all                  # batch-merge every gate-passed agent
 
 ## R&D notes
 
+- [docs/D13-transport-blocker.md](docs/D13-transport-blocker.md) — nested
+  headless agent dispatch fails in the operator's live environment; the
+  gate discipline is transport-independent and proven.
 - [docs/RND-agent-first-honesty-review.md](docs/RND-agent-first-honesty-review.md)
   — the post-dogfood honesty review: where TIDE helps an *agent* operator,
   where it doesn't, and the wiring for real agent dispatch (`opencode run`).
