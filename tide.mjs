@@ -108,6 +108,9 @@ if (cmd === '--script') {
   const cfg = loadCfg();
   const s = await sessionWith(cfg);
   s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\n');
+  if (fs.existsSync(logPath(cfg))) {   // D10: continue ids, orphan stale slots
+    s.recover(fs.readFileSync(logPath(cfg), 'utf8').split('\n').filter((l) => l.trim()));
+  }
   for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
     if (!line.trim() || line.startsWith('#')) continue;
     const [op, ...rest] = line.split(' ');
