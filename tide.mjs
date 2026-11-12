@@ -93,6 +93,7 @@ if (cmd === 'recover') {
   if (!log || !fs.existsSync(log)) { console.error('usage: tide recover <log.jsonl>'); process.exit(1); }
   const cfg = loadCfg();
   const s = await sessionWith(cfg);
+  s.core.logSink = (l) => fs.appendFileSync(log, l + '\n');   // D3: persist recovery decisions
   const orphans = s.recover(fs.readFileSync(log, 'utf8').split('\n').filter((l) => l.trim()));
   console.log(`replayed log — ${orphans} orphaned agent(s) requeued; tasks in queue: ${s.core.queued}`);
   process.exit(0);
