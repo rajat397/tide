@@ -109,9 +109,10 @@ if (cmd === '--script') {
     if (op === 'add') s.addTask(rest.join(' '), '');
     else if (op === 'cap') s.setCap(Number(rest[0]));
     else if (op === 'wait') {
+      // D7: children need wall-clock time to boot/exit; tick at ~10Hz
       for (let i = 0; i < Number(rest[0] ?? 10); i++) {
         s.tick();
-        await new Promise((r) => setImmediate(r));   // let agent exit/gate callbacks land
+        await new Promise((r) => setTimeout(r, 100)); // real time, not loop turns
       }
     }
     else if (op === 'merge-all') { s.mergeAllReady(); s.tick(4); }

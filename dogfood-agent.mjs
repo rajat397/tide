@@ -8,7 +8,7 @@ const taskFile = process.argv[2];
 const task = fs.readFileSync(taskFile, 'utf8');
 fs.unlinkSync(taskFile);                       // never commit the task file
 
-const title = task.split('\n')[0];
+const title = task.split('\n')[0].replace(/^#\s+/, '');
 const edit = (file, from, to) => {
   let src = fs.readFileSync(file, 'utf8');
   if (!src.includes(from)) throw new Error(`patch target missing in ${file}: ${from.slice(0, 60)}`);
