@@ -9,7 +9,9 @@
 //   tide --script CMDFILE      headless scripted session (CI)
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
 const cmd = process.argv[2];
 const CONFIG = path.resolve(process.cwd(), '.tide.json');
@@ -33,9 +35,11 @@ const logPath = (cfg) => path.resolve(cfg.repo ?? process.cwd(), '.tide-log.json
 
 if (cmd === 'init') {
   if (fs.existsSync(CONFIG)) { console.error('.tide.json exists'); process.exit(1); }
+  let base = 'main';
+  try { base = execSync('git symbolic-ref --short HEAD', { cwd: process.cwd() }).toString().trim() || 'main'; } catch { /* D5: fall back */ }
   fs.writeFileSync(CONFIG, JSON.stringify({
     repo: process.cwd(),
-    base: 'main',
+    base,   // D5: detected from the repo
     concurrency: 8,
     worktreeDir: '.tide',
     agentCommand: 'claude -p "$(cat {taskFile})"',   // or: opencode run "$(cat {taskFile})"
