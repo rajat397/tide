@@ -153,7 +153,11 @@ export class OrchestrationCore {
     s.exit = exit; s.note = note;
     if (exit === 0) this.effect('gate', { slot, worktree: s.worktree });
     const t = this.tasks[s.taskId];
-    if (t && exit !== 0) t.state = T_FAILED;
+    if (t && exit !== 0) {
+      t.state = T_FAILED;
+      this.effect('cleanup', { worktree: s.worktree, branch: t.branch });   // D11: failures clean up too
+      s.worktree = s.branch = null;
+    }
   }
   doGateResult({ slot, pass, summary = '' }) {
     const s = this.slots[slot];
