@@ -86,6 +86,13 @@ if (title.startsWith('D1')) {
   edit('runner.mjs',
     "    } catch { /* gh absent or PR exists */ }",
     "    } catch (err) {   // D9: surface the PR failure to the operator\n      console.error('[tide] gh pr create failed (branch pushed — create the PR manually):', String(err.message ?? err).slice(0, 140));\n    }");
+} else if (title.startsWith('D10')) {
+  // D10: --script starts a fresh session — task ids restart and collide with
+  // previous runs' branches. Recover the log first (ids continue, stale
+  // slots orphaned back to the queue).
+  edit('tide.mjs',
+    "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\\n');\n  for (const line of fs.readFileSync(file, 'utf8').split('\\n')) {",
+    "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\\n');\n  if (fs.existsSync(logPath(cfg))) {   // D10: continue ids, orphan stale slots\n    s.recover(fs.readFileSync(logPath(cfg), 'utf8').split('\\n').filter((l) => l.trim()));\n  }\n  for (const line of fs.readFileSync(file, 'utf8').split('\\n')) {");
 } else {
   console.error(`[dogfood-agent] unknown task: ${title}`);
   process.exit(1);
