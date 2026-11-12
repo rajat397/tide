@@ -58,6 +58,10 @@ export class RealRunner {
       this.procs.delete(slot);
       this.session.agentExited(slot, code ?? 1, signal ? `signal ${signal}` : '');
     });
+    child.on('error', (err) => {   // D6: spawn failures must not hang the slot
+      this.procs.delete(slot);
+      this.session.agentExited(slot, 1, `spawn error: ${err.message}`);
+    });
   }
 
   runGate({ slot, worktree }) {
