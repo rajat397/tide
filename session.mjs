@@ -74,7 +74,7 @@ export class TideSession {
   mergeFailed(slot, reason) { this.core.apply({ op: 'merge_failed', slot, reason }, true); }
   failDispatch(slot, reason) {
     const s = this.core.slots[slot];
-    if (s.taskId != null) this.core.apply({ op: 'requeue', task: s.taskId }, true);
+    if (s.taskId != null) this.core.apply({ op: 'dispatch_fail', task: s.taskId, reason }, true);   // D4
   }
 
   // ---- agent output: capped ring outside core state (view data, not state) ----

@@ -90,6 +90,7 @@ export class OrchestrationCore {
       case 'merged':       return this.doMerged(cmd);       // effect fact
       case 'merge_failed': return this.doMergeFailed(cmd);  // effect fact
       case 'orphan':       return this.doOrphan(cmd);       // recovery fact
+      case 'dispatch_fail': return this.doDispatchFail(cmd); // D4: bounded retry
       default: throw new Error(`unknown op ${cmd.op}`);
     }
   }
@@ -111,8 +112,19 @@ export class OrchestrationCore {
     const t = this.tasks[task];
     const s = t.slot != null ? this.slots[t.slot] : null;
     if (s) { s.state = S_FREE; s.taskId = null; s.worktree = s.branch = null; s.exit = null; s.gate = null; }
-    t.state = T_QUEUED; t.slot = null;
-    this.effect('cleanup', { worktree: s?.worktree });
+    t.state = T_QUEUED; t.slot = null; t.failCount = 0;   // manual requeue resets the budget
+    this.effect('cleanup', { worktree: s?.worktree, branch: t.branch });   // D8: also drop the branch
+  }
+  doDispatchFail({ task, reason }) {   // D4: bounded retry, then fail closed
+    const t = this.tasks[task];
+    if (!t) return;
+    t.failCount = (t.failCount ?? 0) + 1;
+    const s = t.slot != null ? this.slots[t.slot] : null;
+    if (s) { s.state = S_FREE; s.taskId = null; s.worktree = s.branch = null; }
+    this.effect('cleanup', { worktree: s?.worktree, branch: t.branch });
+    t.branch = null;
+    if (t.failCount >= 3) { t.state = T_FAILED; t.slot = null; t.note = `dispatch failed x3: ${reason}`; }
+    else { t.state = T_QUEUED; t.slot = null; }
   }
   doAbortTask({ task }) {
     const t = this.tasks[task];
@@ -131,6 +143,7 @@ export class OrchestrationCore {
     s.worktree = worktree; s.branch = branch; s.exit = null; s.gate = null;
     s.outRing.length = 0; s.outDropped = 0;
     t.state = T_ASSIGNED; t.slot = slot; t.branch = branch;
+    t.failCount = 0;
     this.effect('worktree+spawn', { slot, task, title: t.title, body: t.body,
                                      branch, worktree, base: this.base });
   }
