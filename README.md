@@ -77,6 +77,12 @@ tide merge-all                  # batch-merge every gate-passed agent
 (`{task}`, `{title}`, `{slot}` also substituted). Swap in `opencode run`,
 `codex`, `aider`, or anything — **TIDE is agent-agnostic by design**.
 
+## R&D notes
+
+- [docs/RND-agent-first-honesty-review.md](docs/RND-agent-first-honesty-review.md)
+  — the post-dogfood honesty review: where TIDE helps an *agent* operator,
+  where it doesn't, and the wiring for real agent dispatch (`opencode run`).
+
 ## Honest limits (v0.1)
 
 - One repo per cockpit; base branch is assumed fetched.
