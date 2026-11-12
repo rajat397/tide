@@ -16,7 +16,7 @@ const edit = (file, from, to) => {
   console.log(`[dogfood-agent] applied fix to ${file}`);
 };
 
-} else if (title.startsWith('D10')) {
+if (title.startsWith('D10')) {
   // D10: --script starts a fresh session — task ids restart and collide with
   // previous runs' branches. Recover the log first (ids continue, stale
   // slots orphaned back to the queue).
@@ -24,7 +24,7 @@ const edit = (file, from, to) => {
     "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\\n');\n  for (const line of fs.readFileSync(file, 'utf8').split('\\n')) {",
     "  const s = await sessionWith(cfg);\n  s.core.logSink = (l) => fs.appendFileSync(logPath(cfg), l + '\\n');\n  if (fs.existsSync(logPath(cfg))) {   // D10: continue ids, orphan stale slots\n    s.recover(fs.readFileSync(logPath(cfg), 'utf8').split('\\n').filter((l) => l.trim()));\n  }\n  for (const line of fs.readFileSync(file, 'utf8').split('\\n')) {");
 
-if (title.startsWith('D1')) {
+} else if (title.startsWith('D1')) {
   // D1: task files written INSIDE the worktree get committed into merges/PRs
   edit('runner.mjs',
     "import fs from 'node:fs';\nimport path from 'node:path';",
