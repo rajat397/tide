@@ -87,7 +87,9 @@ export class RealRunner {
     try { sh(`git push -u origin ${branch}`); } catch { /* no remote */ }
     try {
       prUrl = this.sh(`gh pr create --title ${JSON.stringify(title)} --body ${JSON.stringify(`Task ${task} dispatched by TIDE (slot ${slot}).\nAgent branch: ${branch}\nGate: passed locally.`)}`, this.cfg.repo).match(/https:\/\/\S+/)?.[0] ?? null;
-    } catch { /* gh absent or PR exists */ }
+    } catch (err) {   // D9: surface the PR failure to the operator
+      console.error('[tide] gh pr create failed (branch pushed — create the PR manually):', String(err.message ?? err).slice(0, 140));
+    }
     this.session.merged(slot, commit, prUrl);
   }
 
