@@ -93,7 +93,8 @@ export class RealRunner {
 
   kill({ pid }) { try { process.kill(pid, 'SIGTERM'); } catch { /* gone */ } }
 
-  cleanup({ worktree }) {
+  cleanup({ worktree, branch }) {   // D8: branches die with their worktree
+    if (branch) { try { this.sh(`git branch -D ${branch}`, this.cfg.repo); } catch { /* already gone */ } }
     if (!worktree) return;
     try {
       const wt = path.resolve(this.cfg.repo, worktree);
